@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Base de Clientes</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="font-family: Arial; padding: 40px;">
+
+    <h1>📊 Base Própria de Clientes</h1>
+
+    <canvas id="grafico" width="400" height="200"></canvas>
+
+    <script>
+        fetch("/metricas")
+            .then(res => res.json())
+            .then(data => {
+                const ctx = document.getElementById("grafico");
+
+                new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: ["Clientes Únicos"],
+                        datasets: [{
+                            label: "Quantidade",
+                            data: [data.clientes_unicos]
+                        }]
+                    }
+                });
+            });
+    </script>
+
+</body>
+</html>
