@@ -54,7 +54,7 @@ def startup():
 # =====================
 @app.get("/")
 def home():
-    return RedirectResponse("/login")
+    return RedirectResponse("/site/landing.html")
 
 @app.get("/login", response_class=HTMLResponse)
 def login():
