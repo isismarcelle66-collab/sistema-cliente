@@ -1,5 +1,7 @@
-venv/
-__pycache__/
+venv__pycache__/
 *.pyc
-clientes.db
+.venv/
+venv/
+
+
 .env
