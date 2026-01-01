@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | Sistema de Clientes</title>
+    <link rel="stylesheet" href="/site/css/dashboard.css">
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" class="loading">
+    <div class="spinner"></div>
+    <span>Carregando dados...</span>
+</div>
+
+<header class="topbar">
+    <h1>📊 Dashboard</h1>
+    <a href="/logout" class="logout">Sair</a>
+</header>
+
+<main class="container">
+
+    <!-- CARDS DE MÉTRICAS -->
+    <section class="cards">
+        <div class="card green">
+            <span>Total clientes</span>
+            <strong id="total-clientes">0</strong>
+        </div>
+        <div class="card blue">
+            <span>Clientes únicos</span>
+            <strong id="clientes-unicos">0</strong>
+        </div>
+        <div class="card orange">
+            <span>Clientes recompra</span>
+            <strong id="clientes-recompra">0</strong>
+        </div>
+        <div class="card purple">
+            <span>Total pedidos</span>
+            <strong id="total-pedidos">0</strong>
+        </div>
+    </section>
+
+    <!-- GRÁFICO -->
+    <section class="panel chart-panel">
+        <h2>Clientes por mês</h2>
+        <canvas id="graficoClientesMes"></canvas>
+    </section>
+
+    <!-- EXPORTAÇÃO -->
+    <section class="panel">
+        <button class="btn-export" id="exportCSV">Exportar CSV</button>
+    </section>
+
+    <!-- FILTROS E TABELA -->
+    <section class="panel table-panel">
+        <h2>Clientes</h2>
+
+        <div class="filtros">
+            <input type="text" id="buscaClientes" placeholder="Buscar por nome, email ou telefone">
+            <input type="date" id="dataInicio">
+            <input type="date" id="dataFim">
+            <button id="filtrarData">Filtrar</button>
+            <button id="limparFiltro">Limpar</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody id="clientesTable"></tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<div id="paginacao" style="margin:20px 30px; display:flex; gap:10px; align-items:center;">
+    <button id="prevPage">Anterior</button>
+    <span id="pageInfo">Página 1</span>
+    <button id="nextPage">Próxima</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const overlay = document.getElementById('loading-overlay');
+
+async function carregarCards() {
+    const res = await fetch('/api/metricas');
+    const data = await res.json();
+    document.getElementById('total-clientes').innerText = data.clientes;
+}
+
+async function carregarGrafico() {
+    const res = await fetch('/api/metricas/mes');
+    const data = await res.json();
+    const ctx = document.getElementById('graficoClientesMes').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Object.keys(data),
+            datasets: [{
+                label: 'Clientes por mês',
+                data: Object.values(data),
+                borderColor: 'green',
+                backgroundColor: 'rgba(0,255,0,0.2)',
+                fill: true
+            }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+}
+
+document.getElementById('exportCSV').addEventListener('click', () => {
+    window.location.href = '/api/export';
+});
+
+let clientes = [];
+let paginaAtual = 1;
+const itensPorPagina = 10;
+
+async function carregarClientes() {
+    const busca = document.getElementById('buscaClientes').value;
+    const inicio = document.getElementById('dataInicio').value;
+    const fim = document.getElementById('dataFim').value;
+
+    const params = new URLSearchParams({ busca, inicio, fim });
+    const res = await fetch('/api/clientes-json?' + params);
+    const data = await res.json();
+    clientes = data.clientes;
+    paginaAtual = 1;
+    renderizarTabela();
+}
+
+function renderizarTabela() {
+    const tbody = document.getElementById('clientesTable');
+    tbody.innerHTML = '';
+    const totalPaginas = Math.ceil(clientes.length / itensPorPagina);
+    const inicio = (paginaAtual - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const paginaClientes = clientes.slice(inicio, fim);
+
+    paginaClientes.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${c.Nome}</td><td>${c.Email}</td><td>${c.Telefone}</td><td>${c.Data}</td>`;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('pageInfo').innerText = `Página ${paginaAtual} de ${totalPaginas || 1}`;
+}
+
+document.getElementById('buscaClientes').addEventListener('input', carregarClientes);
+document.getElementById('filtrarData').addEventListener('click', carregarClientes);
+document.getElementById('limparFiltro').addEventListener('click', () => {
+    document.getElementById('buscaClientes').value = '';
+    document.getElementById('dataInicio').value = '';
+    document.getElementById('dataFim').value = '';
+    carregarClientes();
+});
+
+document.getElementById('prevPage').addEventListener('click', () => {
+    if(paginaAtual > 1){ paginaAtual--; renderizarTabela(); }
+});
+document.getElementById('nextPage').addEventListener('click', () => {
+    const totalPaginas = Math.ceil(clientes.length / itensPorPagina);
+    if(paginaAtual < totalPaginas){ paginaAtual++; renderizarTabela(); }
+});
+
+async function inicializarDashboard() {
+    overlay.classList.remove('hidden');
+    await carregarCards();
+    await carregarClientes();
+    await carregarGrafico();
+    overlay.classList.add('hidden');
+}
+
+inicializarDashboard();
+</script>
+</body>
+</html>

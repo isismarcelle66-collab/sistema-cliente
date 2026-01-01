@@ -1,211 +1,173 @@
-# -*- coding: utf-8 -*-
-
-from fastapi import FastAPI, HTTPException, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Form, Request, Query
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, EmailStr, validator
-from typing import List
+from starlette.middleware.sessions import SessionMiddleware
+from pathlib import Path
 import sqlite3
-import uuid
-import os
-import requests  # para Bling
+import csv
+from io import StringIO
+from datetime import datetime
 
-# =========================
+# =====================
+# PATHS
+# =====================
+BASE_DIR = Path(__file__).resolve().parent
+SITE_DIR = BASE_DIR / "site"
+DB_PATH = BASE_DIR / "clientes.db"
+
+# =====================
 # APP
-# =========================
-app = FastAPI(
-    title="Sistema de Clientes",
-    description="API para construção de base própria de clientes e integração Bling",
-    version="1.0.0"
-)
-SITE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "site")
+# =====================
+app = FastAPI(title="Sistema de Clientes")
 
-app.mount(
-    "/site",
-    StaticFiles(directory=SITE_DIR, html=True),
-    name="site"
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="chave-demo"
 )
 
-# =========================
-# CAMINHO BASE DO PROJETO (AJUSTE 4)
-# =========================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app.mount("/site", StaticFiles(directory=SITE_DIR), name="site")
 
-# =========================
-# BANCO DE DADOS
-# =========================
-conn = sqlite3.connect("clientes.db", check_same_thread=False)
-cursor = conn.cursor()
+# =====================
+# DB
+# =====================
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    return conn, conn.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS clientes (
-    cpf TEXT PRIMARY KEY,
-    nome TEXT NOT NULL,
-    email TEXT NOT NULL,
-    telefone TEXT NOT NULL
-)
-""")
-conn.commit()
-
-# =========================
-# SCHEMAS
-# =========================
-class ClienteCreate(BaseModel):
-    cpf: str = Field(..., example="12345678901", min_length=11, max_length=11)
-    nome: str = Field(..., example="João da Silva", min_length=3)
-    email: EmailStr = Field(..., example="joao@email.com")
-    telefone: str = Field(..., example="11999999999", min_length=10, max_length=11)
-
-    @validator("cpf")
-    def validar_cpf(cls, v):
-        if not v.isdigit():
-            raise ValueError("CPF deve conter apenas números")
-        if len(v) != 11:
-            raise ValueError("CPF deve ter 11 dígitos")
-        return v
-
-
-class ClienteResponse(ClienteCreate):
-    pass
-
-# =========================
-# FUNÇÕES AUXILIARES
-# =========================
-def salvar_cliente(cliente: ClienteCreate):
-    try:
-        cursor.execute(
-            """
-            INSERT INTO clientes (cpf, nome, email, telefone)
-            VALUES (?, ?, ?, ?)
-            """,
-            (cliente.cpf, cliente.nome, cliente.email, cliente.telefone)
+@app.on_event("startup")
+def startup():
+    conn, cursor = get_db()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT,
+            email TEXT,
+            telefone TEXT,
+            created_at TEXT DEFAULT (date('now'))
         )
-        conn.commit()
-    except sqlite3.IntegrityError:
-        raise HTTPException(
-            status_code=409,
-            detail="Cliente com este CPF já existe"
-        )
+    """)
+    conn.commit()
+    conn.close()
 
+# =====================
+# ROTAS
+# =====================
+@app.get("/")
+def home():
+    return RedirectResponse("/login")
 
-def listar_clientes():
-    cursor.execute("SELECT cpf, nome, email, telefone FROM clientes")
-    return cursor.fetchall()
+@app.get("/login", response_class=HTMLResponse)
+def login():
+    return (SITE_DIR / "login.html").read_text(encoding="utf-8")
 
-# =========================
-# CONFIGURAÇÃO BLING
-# =========================
-API_KEY = "SEU_TOKEN_AQUI"
-BLING_BASE_URL = "https://bling.com.br/Api/v2"
+@app.post("/login")
+def login_post(
+    request: Request,
+    email: str = Form(...),
+    senha: str = Form(...)
+):
+    request.session["user"] = email
+    return RedirectResponse("/dashboard", status_code=302)
 
-def buscar_leads_bling():
-    url = f"{BLING_BASE_URL}/clientes/json/"
-    params = {"apikey": API_KEY}
-    resp = requests.get(url, params=params)
-    if resp.status_code == 200:
-        dados = resp.json()
-        clientes = dados.get("retorno", {}).get("clientes", [])
-        return clientes
-    return []
-
-# =========================
-# ENDPOINTS API
-# =========================
-@app.get("/", summary="Health check")
-def health():
-    return {"status": "Sistema rodando com sucesso"}
-
-@app.post("/clientes", response_model=ClienteResponse)
-def criar_cliente(cliente: ClienteCreate):
-    salvar_cliente(cliente)
-    return cliente
-
-@app.get("/clientes", response_model=List[ClienteResponse])
-def buscar_clientes():
-    clientes = listar_clientes()
-    return [
-        ClienteResponse(
-            cpf=cpf,
-            nome=nome,
-            email=email,
-            telefone=telefone
-        )
-        for cpf, nome, email, telefone in clientes
-    ]
-
-# =========================
-# MÉTRICAS
-# =========================
-@app.get("/metricas")
-def metricas():
-    cursor.execute("SELECT COUNT(*) FROM clientes")
-    clientes_unicos = cursor.fetchone()[0]
-
-    total_pedidos = 3
-    clientes_recompra = max(clientes_unicos - 1, 0)
-
-    taxa_recompra = (
-        round((clientes_recompra / clientes_unicos) * 100, 2)
-        if clientes_unicos > 0 else 0
-    )
-
-    return {
-        "clientes_unicos": clientes_unicos,
-        "total_pedidos": total_pedidos,
-        "clientes_recompra": clientes_recompra,
-        "taxa_recompra": f"{taxa_recompra}%"
-    }
-
-# =========================
-# DASHBOARD
-# =========================
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard():
-    leads = buscar_leads_bling()
-    total_leads = len(leads)
+def dashboard(request: Request):
+    if "user" not in request.session:
+        return RedirectResponse("/login")
+    return (SITE_DIR / "dashboard.html").read_text(encoding="utf-8")
 
-    return f"""
-    <html>
-        <head>
-            <title>Dashboard - Clientes Bling</title>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        </head>
-        <body style="font-family: Arial; padding: 40px;">
-            <h1>📊 Clientes do Bling</h1>
-            <p>Total de leads: {total_leads}</p>
-            <canvas id="grafico"></canvas>
-
-            <script>
-                new Chart(document.getElementById("grafico"), {{
-                    type: "bar",
-                    data: {{
-                        labels: ["Total Leads"],
-                        datasets: [{{
-                            label: "Quantidade",
-                            data: [{total_leads}]
-                        }}]
-                    }}
-                }});
-            </script>
-        </body>
-    </html>
-    """
-
-# =========================
-# LEAD
-# =========================
 @app.post("/lead")
-def receber_lead(
+def lead(
     nome: str = Form(...),
     email: str = Form(...),
     telefone: str = Form(...)
 ):
-    cpf_fake = str(uuid.uuid4().int)[:11]
-
+    conn, cursor = get_db()
     cursor.execute(
-        "INSERT INTO clientes (cpf, nome, email, telefone) VALUES (?, ?, ?, ?)",
-        (cpf_fake, nome, email, telefone)
+        "INSERT INTO clientes (nome, email, telefone, created_at) VALUES (?, ?, ?, ?)",
+        (nome, email, telefone, datetime.now().strftime("%Y-%m-%d"))
     )
     conn.commit()
+    conn.close()
+    return {"ok": True}
 
-    return RedirectResponse(url="/site", status_code=302)
+# =====================
+# API Métricas
+# =====================
+@app.get("/api/metricas")
+def metricas():
+    conn, cursor = get_db()
+    cursor.execute("SELECT COUNT(*) FROM clientes")
+    total = cursor.fetchone()[0]
+    conn.close()
+    return {"clientes": total}
+
+@app.get("/api/metricas/mes")
+def clientes_por_mes():
+    conn, cursor = get_db()
+    cursor.execute("SELECT created_at FROM clientes")
+    datas = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    
+    contagem = {}
+    for data in datas:
+        mes = datetime.strptime(data, "%Y-%m-%d").strftime("%Y-%m")
+        contagem[mes] = contagem.get(mes, 0) + 1
+    
+    return contagem
+
+# =====================
+# Exportação CSV
+# =====================
+@app.get("/api/export")
+def export_csv():
+    conn, cursor = get_db()
+    cursor.execute("SELECT id, nome, email, telefone, created_at FROM clientes")
+    linhas = cursor.fetchall()
+    conn.close()
+
+    si = StringIO()
+    writer = csv.writer(si)
+    writer.writerow(["ID", "Nome", "Email", "Telefone", "Data"])
+    writer.writerows(linhas)
+    si.seek(0)
+
+    return StreamingResponse(
+        si,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=clientes.csv"}
+    )
+
+# =====================
+# Endpoint JSON para dashboard
+# =====================
+@app.get("/api/clientes-json")
+def clientes_json(
+    busca: str = Query("", alias="busca"),
+    inicio: str = Query("", alias="inicio"),
+    fim: str = Query("", alias="fim")
+):
+    conn, cursor = get_db()
+    query = "SELECT nome, email, telefone, created_at FROM clientes WHERE 1=1"
+    params = []
+
+    if busca:
+        query += " AND (nome LIKE ? OR email LIKE ? OR telefone LIKE ?)"
+        termo = f"%{busca}%"
+        params.extend([termo, termo, termo])
+
+    if inicio:
+        query += " AND created_at >= ?"
+        params.append(inicio)
+    if fim:
+        query += " AND created_at <= ?"
+        params.append(fim)
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+
+    clientes_list = [
+        {"Nome": r[0], "Email": r[1], "Telefone": r[2], "Data": r[3]}
+        for r in rows
+    ]
+    return {"clientes": clientes_list}
