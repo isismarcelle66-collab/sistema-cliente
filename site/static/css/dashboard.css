@@ -1,0 +1,60 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 20px;
+}
+
+.menu {
+    background: #222;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.menu a {
+    color: #fff;
+    margin-right: 15px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.menu a.ativo {
+    text-decoration: underline;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card span {
+    font-size: 36px;
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+.novo {
+    border-top: 5px solid #3498db;
+}
+
+.contato {
+    border-top: 5px solid #f1c40f;
+}
+
+.fechado {
+    border-top: 5px solid #2ecc71;
+}

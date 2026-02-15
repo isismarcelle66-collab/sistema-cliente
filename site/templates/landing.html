@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Sistema de Clientes | Cresça sua base</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    body {
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 60px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      color: #38bdf8;
+    }
+
+    header a {
+      color: #e5e7eb;
+      text-decoration: none;
+      margin-left: 20px;
+      font-weight: 500;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 80px 60px;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .hero h2 {
+      font-size: 48px;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: #cbd5f5;
+      margin-bottom: 30px;
+    }
+
+    .cta {
+      display: inline-block;
+      background: #38bdf8;
+      color: #020617;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: 0.2s;
+    }
+
+    .cta:hover {
+      background: #0ea5e9;
+    }
+
+    .mockup {
+      background: linear-gradient(135deg, #1e293b, #020617);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    }
+
+    .mockup div {
+      background: #020617;
+      padding: 14px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .section {
+      padding: 80px 60px;
+      background: #020617;
+    }
+
+    .section h3 {
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 40px;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 30px;
+    }
+
+    .feature {
+      background: #0f172a;
+      padding: 30px;
+      border-radius: 14px;
+      border: 1px solid #1e293b;
+    }
+
+    .feature h4 {
+      margin-bottom: 10px;
+      color: #38bdf8;
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>SistemaClientes</h1>
+  <nav>
+    <a href="/login">Entrar</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div>
+    <h2>Transforme visitantes em clientes fiéis</h2>
+    <p>
+      Controle sua base de clientes, acompanhe métricas reais
+      e construa uma audiência própria — sem depender de redes sociais.
+    </p>
+    <a class="cta" href="/login">Começar agora</a>
+  </div>
+
+  <div class="mockup">
+    <div>📊 Clientes crescendo diariamente</div>
+    <div>📥 Leads capturados automaticamente</div>
+    <div>📈 Métricas claras e simples</div>
+    <div>⬇️ Exportação CSV em 1 clique</div>
+  </div>
+</section>
+
+<section class="section">
+  <h3>Por que usar este sistema?</h3>
+
+  <div class="features">
+    <div class="feature">
+      <h4>Base própria</h4>
+      <p>Seus clientes, seus dados. Sem depender de plataforma externa.</p>
+    </div>
+
+    <div class="feature">
+      <h4>Métricas reais</h4>
+      <p>Acompanhe crescimento, leads e resultados de verdade.</p>
+    </div>
+
+    <div class="feature">
+      <h4>Simples e rápido</h4>
+      <p>Interface limpa, sem excesso de botões ou confusão.</p>
+    </div>
+
+    <div class="feature">
+      <h4>Pronto pra vender</h4>
+      <p>Ideal para validar produto, oferta ou operação.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  © 2026 • Sistema de Clientes • Todos os direitos reservados
+</footer>
+
+</body>
+</html>

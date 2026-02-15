@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Clientes</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<h1>Clientes</h1>
+
+<table>
+<tr><th>Nome</th><th>Email</th><th>Telefone</th></tr>
+
+{% for c in clientes %}
+<tr>
+<td>{{ c[1] }}</td>
+<td>{{ c[2] }}</td>
+<td>{{ c[3] }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

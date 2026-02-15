@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Novo Lead</h1>
+
+<form method="post" action="/salvar-lead">
+  <input type="text" name="nome" placeholder="Nome" required><br><br>
+  <input type="email" name="email" placeholder="Email" required><br><br>
+  <input type="text" name="telefone" placeholder="Telefone" required><br><br>
+  <button type="submit">Salvar</button>
+</form>
+{% endblock %}

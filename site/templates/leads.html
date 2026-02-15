@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Novo Lead</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<h1>Novo Lead</h1>
+
+<form action="/leads" method="post">
+    <input type="text" name="nome" placeholder="Nome" required><br><br>
+    <input type="text" name="contato" placeholder="Contato" required><br><br>
+    <input type="text" name="origem" placeholder="Origem"><br><br>
+
+    <button type="submit">Cadastrar Lead</button>
+</form>
+
+<br>
+<a href="/pipeline">Ver Pipeline</a>
+
+</body>
+</html>

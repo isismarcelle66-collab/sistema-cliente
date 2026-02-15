@@ -1,9 +1,9 @@
 import sqlite3
-from pathlib import Path
+import os
 
-# caminho do banco
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "clientes.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "database.db")
+
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -11,18 +11,17 @@ def get_connection():
     return conn
 
 
-def criar_tabelas():
+def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS clientes (
+    CREATE TABLE IF NOT EXISTS leads (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        email TEXT NOT NULL,
+        nome TEXT,
+        email TEXT,
         telefone TEXT,
-        origem TEXT,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        status TEXT DEFAULT 'novo'
     )
     """)
 
