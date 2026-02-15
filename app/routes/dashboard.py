@@ -1,20 +1,14 @@
-# routers/dashboard.py
-
-from fastapi import APIRouter
-from datetime import datetime
-from collections import Counter
+from fastapi import APIRouter, Request
+from fastapi.templating import Jinja2Templates
+import os
 
 router = APIRouter()
 
-# exemplo de dados, substitua pela sua base real
-fake_users = [
-    {"id": 1, "created_at": "2025-12-01"},
-    {"id": 2, "created_at": "2025-12-03"},
-    {"id": 3, "created_at": "2025-11-15"},
-]
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES_PATH = os.path.join(BASE_DIR, "..", "site", "templates")
 
-@router.get("/stats/customers-per-month")
-def customers_per_month():
-    months = [datetime.strptime(u["created_at"], "%Y-%m-%d").strftime("%Y-%m") for u in fake_users]
-    counts = dict(Counter(months))
-    return counts
+templates = Jinja2Templates(directory=TEMPLATES_PATH)
+
+@router.get("/pipeline")
+def pipeline(request: Request):
+    return templates.TemplateResponse("pipeline.html", {"request": request})
