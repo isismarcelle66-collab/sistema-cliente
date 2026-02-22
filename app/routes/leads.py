@@ -7,14 +7,57 @@ router = APIRouter()
 # ===============================
 # LISTAR LEADS
 # ===============================
-@router.get("/api/leads")
-def listar_leads():
+@router.post("/api/leads")
+def criar_lead(request: Request, nome: str, email: str, telefone: str):
+    username = request.cookies.get("user")
+
+    if not username:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
     conn = get_connection()
     cursor = conn.cursor()
 
+    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+
+    if not user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
     cursor.execute(
-        "SELECT id, nome, email, telefone, status FROM leads"
+        "INSERT INTO leads (nome, email, telefone, status, user_id) VALUES (?, ?, ?, ?, ?)",
+        (nome, email, telefone, "novo", user["id"]),
     )
+
+    conn.commit()
+    conn.close()
+
+    return {"message": "Lead criado com sucesso"}
+# ===============================
+# CRIAR LEAD
+# ===============================
+@router.get("/api/leads")
+def listar_leads(request: Request):
+    username = request.cookies.get("user")
+
+    if not username:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+
+    if not user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    cursor.execute(
+        "SELECT id, nome, email, telefone, status FROM leads WHERE user_id = ?",
+        (user["id"],),
+    )
+
     leads = cursor.fetchall()
     conn.close()
 
@@ -27,28 +70,7 @@ def listar_leads():
             "status": l[4],
         }
         for l in leads
-    ]
-
-
-# ===============================
-# CRIAR LEAD
-# ===============================
-@router.post("/api/leads")
-def criar_lead(nome: str, email: str, telefone: str):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "INSERT INTO leads (nome, email, telefone, status) VALUES (?, ?, ?, ?)",
-        (nome, email, telefone, "novo"),
-    )
-
-    conn.commit()
-    conn.close()
-
-    return {"message": "Lead criado com sucesso"}
-
-
+   ]
 # ===============================
 # ATUALIZAR STATUS (Drag & Drop)
 # ===============================
