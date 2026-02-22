@@ -1,27 +1,47 @@
 document.addEventListener("DOMContentLoaded", function () {
   fetch("/api/leads")
-    .then(response => response.json())
+    .then(res => res.json())
     .then(leads => {
       leads.forEach(lead => {
-        const card = document.createElement("div");
-        card.style.border = "1px solid #ccc";
-        card.style.padding = "8px";
-        card.style.margin = "5px";
-        card.style.backgroundColor = "#f9f9f9";
-
-        card.innerHTML = `
-          <strong>${lead.nome}</strong><br>
-          ${lead.email}<br>
-          ${lead.telefone}
-        `;
-
-        const coluna = document.getElementById(lead.status);
-        if (coluna) {
-          coluna.appendChild(card);
-        }
+        criarCard(lead);
       });
-    })
-    .catch(error => {
-      console.error("Erro ao carregar leads:", error);
     });
+
+  function criarCard(lead) {
+    const card = document.createElement("div");
+    card.classList.add("card");
+    card.draggable = true;
+    card.dataset.id = lead.id;
+
+    card.innerHTML = `
+      <strong>${lead.nome}</strong><br>
+      ${lead.email}
+    `;
+
+    card.addEventListener("dragstart", dragStart);
+
+    const coluna = document.getElementById(lead.status);
+    if (coluna) coluna.appendChild(card);
+  }
+
+  function dragStart(e) {
+    e.dataTransfer.setData("id", e.target.dataset.id);
+  }
+
+  document.querySelectorAll(".coluna").forEach(coluna => {
+    coluna.addEventListener("dragover", e => e.preventDefault());
+
+    coluna.addEventListener("drop", function (e) {
+      e.preventDefault();
+
+      const id = e.dataTransfer.getData("id");
+      const card = document.querySelector(`[data-id='${id}']`);
+
+      this.appendChild(card);
+
+      fetch(`/api/leads/${id}?status=${this.id}`, {
+        method: "PUT"
+      });
+    });
+  });
 });
