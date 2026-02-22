@@ -23,7 +23,7 @@ def register_page(request: Request):
 
 
 @router.post("/register")
-def register_user(request: Request, username: str = Form(...), password: str = Form(...)):
+def register_user(username: str = Form(...), password: str = Form(...)):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -31,15 +31,18 @@ def register_user(request: Request, username: str = Form(...), password: str = F
 
     try:
         cursor.execute(
-            "INSERT INTO users (username, password) VALUES (?, ?)",
+            "INSERT INTO users (username, password) VALUES (%s, %s)",
             (username, hashed_password),
         )
         conn.commit()
-    except:
+    except Exception:
+        cursor.close()
         conn.close()
         raise HTTPException(status_code=400, detail="Usuário já existe")
 
+    cursor.close()
     conn.close()
+
     return RedirectResponse(url="/login", status_code=303)
 
 
@@ -52,19 +55,27 @@ def login_page(request: Request):
 
 
 @router.post("/login")
-def login_user(request: Request, username: str = Form(...), password: str = Form(...)):
+def login_user(username: str = Form(...), password: str = Form(...)):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    cursor.execute(
+        "SELECT id, username, password FROM users WHERE username = %s",
+        (username,),
+    )
     user = cursor.fetchone()
+
+    cursor.close()
     conn.close()
 
-    if not user or not pwd_context.verify(password, user["password"]):
-        raise HTTPException(status_code=400, detail="Credenciais inválidas")
+    if not user:
+        raise HTTPException(status_code=400, detail="Usuário não encontrado")
+
+    if not pwd_context.verify(password, user[2]):
+        raise HTTPException(status_code=400, detail="Senha incorreta")
 
     response = RedirectResponse(url="/pipeline", status_code=303)
-    response.set_cookie(key="user", value=username)
+    response.set_cookie(key="user", value=user[1], httponly=True)
 
     return response
 

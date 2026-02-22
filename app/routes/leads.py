@@ -1,40 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request, HTTPException
 from app.database import get_connection
 
 router = APIRouter()
 
 
 # ===============================
-# LISTAR LEADS
-# ===============================
-@router.post("/api/leads")
-def criar_lead(request: Request, nome: str, email: str, telefone: str):
-    username = request.cookies.get("user")
-
-    if not username:
-        raise HTTPException(status_code=401, detail="Não autenticado")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-
-    if not user:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
-    cursor.execute(
-        "INSERT INTO leads (nome, email, telefone, status, user_id) VALUES (?, ?, ?, ?, ?)",
-        (nome, email, telefone, "novo", user["id"]),
-    )
-
-    conn.commit()
-    conn.close()
-
-    return {"message": "Lead criado com sucesso"}
-# ===============================
-# CRIAR LEAD
+# LISTAR LEADS DO USUÁRIO
 # ===============================
 @router.get("/api/leads")
 def listar_leads(request: Request):
@@ -46,19 +17,22 @@ def listar_leads(request: Request):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
     user = cursor.fetchone()
 
     if not user:
+        cursor.close()
         conn.close()
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
     cursor.execute(
-        "SELECT id, nome, email, telefone, status FROM leads WHERE user_id = ?",
-        (user["id"],),
+        "SELECT id, nome, email, telefone, status FROM leads WHERE user_id = %s",
+        (user[0],)
     )
 
     leads = cursor.fetchall()
+
+    cursor.close()
     conn.close()
 
     return [
@@ -70,9 +44,44 @@ def listar_leads(request: Request):
             "status": l[4],
         }
         for l in leads
-   ]
+    ]
+
+
 # ===============================
-# ATUALIZAR STATUS (Drag & Drop)
+# CRIAR LEAD
+# ===============================
+@router.post("/api/leads")
+def criar_lead(request: Request, nome: str, email: str, telefone: str):
+    username = request.cookies.get("user")
+
+    if not username:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    cursor.execute(
+        "INSERT INTO leads (nome, email, telefone, status, user_id) VALUES (%s, %s, %s, %s, %s)",
+        (nome, email, telefone, "novo", user[0]),
+    )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {"message": "Lead criado com sucesso"}
+
+
+# ===============================
+# ATUALIZAR STATUS
 # ===============================
 @router.put("/api/leads/{lead_id}")
 def atualizar_status(lead_id: int, status: str):
@@ -80,35 +89,13 @@ def atualizar_status(lead_id: int, status: str):
     cursor = conn.cursor()
 
     cursor.execute(
-        "UPDATE leads SET status = ? WHERE id = ?",
+        "UPDATE leads SET status = %s WHERE id = %s",
         (status, lead_id),
     )
 
-    if cursor.rowcount == 0:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Lead não encontrado")
-
     conn.commit()
+
+    cursor.close()
     conn.close()
 
     return {"message": "Status atualizado com sucesso"}
-
-
-# ===============================
-# DELETAR LEAD (extra profissional)
-# ===============================
-@router.delete("/api/leads/{lead_id}")
-def deletar_lead(lead_id: int):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM leads WHERE id = ?", (lead_id,))
-
-    if cursor.rowcount == 0:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Lead não encontrado")
-
-    conn.commit()
-    conn.close()
-
-    return {"message": "Lead removido com sucesso"}

@@ -1,13 +1,10 @@
-import sqlite3
 import os
+import psycopg2
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "database.db")
-
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL)
     return conn
 
 
@@ -15,29 +12,25 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # ===============================
-    # TABELA DE LEADS
-    # ===============================
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS leads (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT,
-        email TEXT,
-        telefone TEXT,
-        status TEXT DEFAULT 'novo'
-    )
-    """)
-
-    # ===============================
-    # TABELA DE USUÁRIOS
-    # ===============================
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         username TEXT UNIQUE,
         password TEXT
     )
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS leads (
+        id SERIAL PRIMARY KEY,
+        nome TEXT,
+        email TEXT,
+        telefone TEXT,
+        status TEXT DEFAULT 'novo',
+        user_id INTEGER REFERENCES users(id)
+    )
+    """)
+
     conn.commit()
+    cursor.close()
     conn.close()
