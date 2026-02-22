@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Login - ERP</title>
+    <title>Cadastro - ERP</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,7 +38,7 @@
         button {
             width: 100%;
             padding: 10px;
-            background: #4CAF50;
+            background: #2196F3;
             border: none;
             border-radius: 5px;
             color: white;
@@ -47,11 +47,11 @@
         }
 
         button:hover {
-            background: #45a049;
+            background: #1e88e5;
         }
 
         a {
-            color: #4CAF50;
+            color: #2196F3;
             text-decoration: none;
             display: block;
             text-align: center;
@@ -62,15 +62,15 @@
 <body>
 
 <div class="container">
-    <h2>Login</h2>
+    <h2>Criar Conta</h2>
 
-    <form method="post" action="/login">
+    <form method="post" action="/register">
         <input type="text" name="username" placeholder="Usuário" required>
         <input type="password" name="password" placeholder="Senha" required>
-        <button type="submit">Entrar</button>
+        <button type="submit">Cadastrar</button>
     </form>
 
-    <a href="/register">Criar conta</a>
+    <a href="/login">Já tenho conta</a>
 </div>
 
 </body>

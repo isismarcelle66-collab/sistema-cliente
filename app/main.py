@@ -10,6 +10,7 @@ from app.database import init_db
 from app.routes import leads
 from app.routes import dashboard
 from app.routes import metricas
+from app.routes import auth
 
 
 app = FastAPI(title="Sistema ERP - Gestão de Leads")
@@ -50,7 +51,7 @@ else:
 app.include_router(leads.router)
 app.include_router(dashboard.router)
 app.include_router(metricas.router)
-
+app.include_router(auth.router)
 
 # ==============================
 # ROTA RAIZ

@@ -15,6 +15,9 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # ===============================
+    # TABELA DE LEADS
+    # ===============================
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS leads (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,6 +25,17 @@ def init_db():
         email TEXT,
         telefone TEXT,
         status TEXT DEFAULT 'novo'
+    )
+    """)
+
+    # ===============================
+    # TABELA DE USUÁRIOS
+    # ===============================
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
     )
     """)
 
