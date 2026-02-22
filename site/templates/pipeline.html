@@ -2,27 +2,85 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Pipeline</title>
+    <title>Pipeline - ERP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        header {
+            background: #1e1e2f;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .board {
+            display: flex;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .coluna {
+            background: white;
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 400px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .coluna h3 {
+            text-align: center;
+        }
+
+        .card {
+            background: #e3e3e3;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            cursor: grab;
+        }
+    </style>
 </head>
 <body>
 
-<h1>Pipeline / Kanban</h1>
-
-<div style="display:flex; gap:20px;">
+<header>
+    <h1>Pipeline de Vendas</h1>
     <div>
+        Bem-vindo, {{ user }} |
+        <a href="/logout">Sair</a>
+    </div>
+</header>
+
+<div class="board">
+
+    <div class="coluna" id="novo">
         <h3>Novo</h3>
-        <div id="novo"></div>
     </div>
 
-    <div>
+    <div class="coluna" id="contato">
         <h3>Contato</h3>
-        <div id="contato"></div>
     </div>
 
-    <div>
+    <div class="coluna" id="fechado">
         <h3>Fechado</h3>
-        <div id="fechado"></div>
     </div>
+
 </div>
 
 <script src="/static/js/kanban.js"></script>
